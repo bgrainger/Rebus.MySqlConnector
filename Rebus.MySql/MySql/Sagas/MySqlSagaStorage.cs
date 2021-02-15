@@ -62,12 +62,7 @@ namespace Rebus.MySql.Sagas
         /// </summary>
         public void EnsureTablesAreCreated()
         {
-            AsyncHelpers.RunSync(EnsureTablesAreCreatedAsync);
-        }
-
-        async Task EnsureTablesAreCreatedAsync()
-        {
-            using (var connection = await _connectionProvider.GetConnection().ConfigureAwait(false))
+            using (var connection = _connectionProvider.GetConnection())
             {
                 var tableNames = connection.GetTableNames().ToList();
                 var hasDataTable = tableNames.Contains(_dataTableName);
@@ -89,7 +84,7 @@ namespace Rebus.MySql.Sagas
 
                 _log.Info("Saga tables {tableName} (data) and {tableName} (index) do not exist - they will be created now", _dataTableName.QualifiedName, _indexTableName.QualifiedName);
 
-                await connection.ExecuteCommands($@"
+                connection.ExecuteCommands($@"
                     CREATE TABLE {_dataTableName.QualifiedName} (
                         `id` CHAR(36) NOT NULL,
                         `revision` INT NOT NULL,
@@ -107,8 +102,8 @@ namespace Rebus.MySql.Sagas
                     ----
                     CREATE INDEX `idx_saga_id` ON {_indexTableName.QualifiedName} (
                         `saga_id`
-                    );").ConfigureAwait(false);
-                await connection.Complete().ConfigureAwait(false);
+                    );");
+                connection.Complete();
             }
         }
 
@@ -122,7 +117,7 @@ namespace Rebus.MySql.Sagas
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
             if (propertyValue == null) throw new ArgumentNullException(nameof(propertyValue));
 
-            using (var connection = await _connectionProvider.GetConnection().ConfigureAwait(false))
+            using (var connection = await _connectionProvider.GetConnectionAsync().ConfigureAwait(false))
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -181,7 +176,7 @@ namespace Rebus.MySql.Sagas
             {
                 throw new InvalidOperationException($"Attempted to insert saga data with ID {sagaData.Id} and revision {sagaData.Revision}, but revision must be 0 on first insert!");
             }
-            using (var connection = await _connectionProvider.GetConnection().ConfigureAwait(false))
+            using (var connection = await _connectionProvider.GetConnectionAsync().ConfigureAwait(false))
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -218,7 +213,7 @@ namespace Rebus.MySql.Sagas
                 {
                     await CreateIndex(connection, sagaData, propertiesToIndex).ConfigureAwait(false);
                 }
-                await connection.Complete().ConfigureAwait(false);
+                await connection.CompleteAsync().ConfigureAwait(false);
             }
         }
 
@@ -227,7 +222,7 @@ namespace Rebus.MySql.Sagas
         /// </summary>
         public async Task Update(ISagaData sagaData, IEnumerable<ISagaCorrelationProperty> correlationProperties)
         {
-            using (var connection = await _connectionProvider.GetConnection().ConfigureAwait(false))
+            using (var connection = await _connectionProvider.GetConnectionAsync().ConfigureAwait(false))
             {
                 var revisionToUpdate = sagaData.Revision;
                 sagaData.Revision++;
@@ -266,7 +261,7 @@ namespace Rebus.MySql.Sagas
                     {
                         await CreateIndex(connection, sagaData, propertiesToIndex).ConfigureAwait(false);
                     }
-                    await connection.Complete().ConfigureAwait(false);
+                    await connection.CompleteAsync().ConfigureAwait(false);
                 }
                 catch
                 {
@@ -281,7 +276,7 @@ namespace Rebus.MySql.Sagas
         /// </summary>
         public async Task Delete(ISagaData sagaData)
         {
-            using (var connection = await _connectionProvider.GetConnection().ConfigureAwait(false))
+            using (var connection = await _connectionProvider.GetConnectionAsync().ConfigureAwait(false))
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -300,7 +295,7 @@ namespace Rebus.MySql.Sagas
                     command.Parameters.Add("id", MySqlDbType.Guid).Value = sagaData.Id;
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
-                await connection.Complete().ConfigureAwait(false);
+                await connection.CompleteAsync().ConfigureAwait(false);
             }
             sagaData.Revision++;
         }
