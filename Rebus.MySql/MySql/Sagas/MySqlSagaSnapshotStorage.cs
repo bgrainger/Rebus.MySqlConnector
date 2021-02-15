@@ -104,7 +104,7 @@ namespace Rebus.MySql.Sagas
                     command.Parameters.Add("data", MySqlDbType.VarChar, MathUtil.GetNextPowerOfTwo(dataString.Length)).Value = dataString;
                     command.Parameters.Add("metadata", MySqlDbType.VarChar, MathUtil.GetNextPowerOfTwo(metadataString.Length)).Value = metadataString;
                     Console.WriteLine($"OK WE'RE SAVING SAGA SNAPSHOT {sagaData.Id} rev. {sagaData.Revision} NOW");
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }

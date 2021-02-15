@@ -145,9 +145,9 @@ namespace Rebus.MySql.Sagas
                     }
                     var correlationPropertyValue = GetCorrelationPropertyValue(propertyValue);
                     command.Parameters.Add("value", MySqlDbType.VarChar, MathUtil.GetNextPowerOfTwo(correlationPropertyValue.Length)).Value = correlationPropertyValue;
-                    using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
+                    using (var reader = command.ExecuteReader())
                     {
-                        if (!await reader.ReadAsync().ConfigureAwait(false)) return null;
+                        if (!reader.Read()) return null;
                         var value = GetData(reader);
                         try
                         {
@@ -196,7 +196,7 @@ namespace Rebus.MySql.Sagas
                     SetData(command, data);
                     try
                     {
-                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        command.ExecuteNonQuery();
                     }
                     catch (MySqlException sqlException)
                     {
@@ -233,7 +233,7 @@ namespace Rebus.MySql.Sagas
                     {
                         command.CommandText = $@"DELETE FROM {_indexTableName.QualifiedName} WHERE saga_id = @id";
                         command.Parameters.Add("id", MySqlDbType.Guid).Value = sagaData.Id;
-                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        command.ExecuteNonQuery();
                     }
 
                     // Next, update or insert the saga
@@ -250,7 +250,7 @@ namespace Rebus.MySql.Sagas
                         command.Parameters.Add("current_revision", MySqlDbType.Int32).Value = revisionToUpdate;
                         command.Parameters.Add("next_revision", MySqlDbType.Int32).Value = sagaData.Revision;
                         SetData(command, data);
-                        var rows = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        var rows = command.ExecuteNonQuery();
                         if (rows == 0)
                         {
                             throw new ConcurrencyException($"Update of saga with ID {sagaData.Id} did not succeed because someone else beat us to it");
@@ -283,7 +283,7 @@ namespace Rebus.MySql.Sagas
                     command.CommandText = $@"DELETE FROM {_dataTableName.QualifiedName} WHERE id = @id AND revision = @current_revision";
                     command.Parameters.Add("id", MySqlDbType.Guid).Value = sagaData.Id;
                     command.Parameters.Add("current_revision", MySqlDbType.Int32).Value = sagaData.Revision;
-                    var rows = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    var rows = command.ExecuteNonQuery();
                     if (rows == 0)
                     {
                         throw new ConcurrencyException($"Delete of saga with ID {sagaData.Id} did not succeed because someone else beat us to it");
@@ -293,7 +293,7 @@ namespace Rebus.MySql.Sagas
                 {
                     command.CommandText = $@"DELETE FROM {_indexTableName.QualifiedName} WHERE saga_id = @id";
                     command.Parameters.Add("id", MySqlDbType.Guid).Value = sagaData.Id;
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }
@@ -357,7 +357,7 @@ namespace Rebus.MySql.Sagas
                 command.Parameters.Add("saga_id", MySqlDbType.Guid).Value = sagaData.Id;
                 try
                 {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 catch (MySqlException sqlException)
                 {

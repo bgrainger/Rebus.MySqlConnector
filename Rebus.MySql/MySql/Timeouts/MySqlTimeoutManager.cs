@@ -105,7 +105,7 @@ namespace Rebus.MySql.Timeouts
                     command.Parameters.Add("due_time", MySqlDbType.DateTime).Value = approximateDueTime;
                     command.Parameters.Add("headers", MySqlDbType.VarChar, MathUtil.GetNextPowerOfTwo(headersString.Length)).Value = headersString;
                     command.Parameters.Add("body", MySqlDbType.VarBinary, MathUtil.GetNextPowerOfTwo(body.Length)).Value = body;
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }
@@ -136,9 +136,9 @@ namespace Rebus.MySql.Timeouts
                         FOR UPDATE";
                     command.Parameters.Add("current_time", MySqlDbType.DateTime).Value = _rebusTime.Now;
 
-                    using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
+                    using (var reader = command.ExecuteReader())
                     {
-                        while (await reader.ReadAsync().ConfigureAwait(false))
+                        while (reader.Read())
                         {
                             var id = (long)reader["id"];
                             var headersString = (string)reader["headers"];
@@ -150,7 +150,7 @@ namespace Rebus.MySql.Timeouts
                                 using (var deleteCommand = connection.CreateCommand())
                                 {
                                     deleteCommand.CommandText = $"DELETE FROM {tableName} WHERE id = {id}";
-                                    await deleteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
+                                    deleteCommand.ExecuteNonQuery();
                                 }
                             });
 

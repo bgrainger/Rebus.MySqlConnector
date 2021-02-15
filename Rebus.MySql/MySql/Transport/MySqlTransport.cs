@@ -334,7 +334,7 @@ namespace Rebus.MySql.Transport
         /// <returns>A <seealso cref="TransportMessage"/> representing the row or <c>null</c> if no row was available</returns>
         protected static async Task<TransportMessage> ExtractTransportMessageFromReader(MySqlDataReader reader, CancellationToken cancellationToken)
         {
-            if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) == false)
+            if (!reader.Read())
             {
                 return null;
             }
@@ -391,7 +391,7 @@ namespace Rebus.MySql.Transport
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $@"UPDATE {_receiveTableName.QualifiedName} SET processing = 0 WHERE id = {messageId}";
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }
@@ -408,7 +408,7 @@ namespace Rebus.MySql.Transport
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $@"DELETE FROM {_receiveTableName.QualifiedName} WHERE id = {messageId}";
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }
@@ -477,7 +477,7 @@ namespace Rebus.MySql.Transport
                 command.Parameters.Add("visible_microseconds", MySqlDbType.Int32).Value = visible.Milliseconds * 1000;
                 command.Parameters.Add("ttl_total_seconds", MySqlDbType.Int32).Value = (int)ttl.TotalSeconds;
                 command.Parameters.Add("ttl_microseconds", MySqlDbType.Int32).Value = ttl.Milliseconds * 1000;
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                command.ExecuteNonQuery();
             }
         }
 
@@ -538,9 +538,9 @@ namespace Rebus.MySql.Transport
                             WHERE expiration < now() and 
                                   processing = 0
                             LIMIT 100";
-                        using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
+                        using (var reader = command.ExecuteReader())
                         {
-                            while (await reader.ReadAsync().ConfigureAwait(false))
+                            while (reader.Read())
                             {
                                 messageIds.Add((long)reader["id"]);
                             }
@@ -550,7 +550,7 @@ namespace Rebus.MySql.Transport
                         if (messageIds.Count > 0)
                         {
                             command.CommandText = $"DELETE FROM {_receiveTableName.QualifiedName} where id in ({string.Join(",", messageIds)})";
-                            affectedRows = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                            affectedRows = command.ExecuteNonQuery();
                         }
                     }
 

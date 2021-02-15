@@ -78,7 +78,7 @@ namespace Rebus.MySql
                 if (_enlistInAmbientTransaction == false)
                 {
                     connection = CreateSqlConnectionSuppressingAPossibleAmbientTransaction();
-                    transaction = await connection.BeginTransactionAsync(IsolationLevel);
+                    transaction = connection.BeginTransaction(IsolationLevel);
                 }
                 else
                 {

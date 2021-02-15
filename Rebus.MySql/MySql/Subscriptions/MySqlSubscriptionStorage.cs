@@ -143,9 +143,9 @@ namespace Rebus.MySql.Subscriptions
                         WHERE topic = @topic";
                     command.Parameters.Add("topic", MySqlDbType.VarChar, _topicLength).Value = topic;
                     var subscriberAddresses = new List<string>();
-                    using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
+                    using (var reader = command.ExecuteReader())
                     {
-                        while (await reader.ReadAsync().ConfigureAwait(false))
+                        while (reader.Read())
                         {
                             var address = (string)reader["address"];
                             subscriberAddresses.Add(address);
@@ -177,7 +177,7 @@ namespace Rebus.MySql.Subscriptions
                         )";
                     command.Parameters.Add("topic", MySqlDbType.VarChar, _topicLength).Value = topic;
                     command.Parameters.Add("address", MySqlDbType.VarChar, _addressLength).Value = subscriberAddress;
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }
@@ -212,7 +212,7 @@ namespace Rebus.MySql.Subscriptions
                     command.CommandText = $@"DELETE FROM {_tableName.QualifiedName} WHERE topic = @topic AND address = @address";
                     command.Parameters.Add("topic", MySqlDbType.VarChar, _topicLength).Value = topic;
                     command.Parameters.Add("address", MySqlDbType.VarChar, _addressLength).Value = subscriberAddress;
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    command.ExecuteNonQuery();
                 }
                 await connection.CompleteAsync().ConfigureAwait(false);
             }

@@ -43,8 +43,8 @@ namespace Rebus.MySql.Tests.Sagas
             await using (var command = connection.CreateCommand())
             {
                 command.CommandText = $@"SELECT * FROM {tableName}";
-                await using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
                 {
                     var sagaData = (ISagaData)new ObjectSerializer().DeserializeFromString((string)reader["data"]);
                     var metadata = new HeaderSerializer().DeserializeFromString((string)reader["metadata"]);

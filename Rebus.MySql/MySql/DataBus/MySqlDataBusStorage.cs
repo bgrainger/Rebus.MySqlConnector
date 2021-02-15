@@ -130,7 +130,7 @@ namespace Rebus.MySql.DataBus
                             command.Parameters.Add("meta", MySqlDbType.VarBinary, MathUtil.GetNextPowerOfTwo(metadataBytes.Length)).Value = metadataBytes;
                             command.Parameters.Add("data", MySqlDbType.VarBinary, MathUtil.GetNextPowerOfTwo(sourceBytes.Length)).Value = sourceBytes;
                             command.Parameters.Add("now", MySqlDbType.DateTime).Value = _rebusTime.Now.DateTime;
-                            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                            command.ExecuteNonQuery();
                         }
                     }
                     await connection.CompleteAsync().ConfigureAwait(false);
@@ -165,9 +165,9 @@ namespace Rebus.MySql.DataBus
                             WHERE id = @id
                             LIMIT 1";
                         command.Parameters.Add("id", MySqlDbType.VarChar, 200).Value = id;
-                        var reader = await command.ExecuteReaderAsync(CommandBehavior.SequentialAccess).ConfigureAwait(false);
+                        var reader = command.ExecuteReader(CommandBehavior.SequentialAccess);
                         objectsToDisposeOnException.Push(reader);
-                        if (!await reader.ReadAsync().ConfigureAwait(false))
+                        if (!reader.Read())
                         {
                             throw new ArgumentException($"Row with ID {id} not found");
                         }
@@ -218,7 +218,7 @@ namespace Rebus.MySql.DataBus
                 command.CommandText = $"UPDATE {_tableName.QualifiedName} SET last_read_time = @now WHERE id = @id";
                 command.Parameters.Add("now", MySqlDbType.DateTime).Value = _rebusTime.Now.DateTime;
                 command.Parameters.Add("id", MySqlDbType.VarChar, 200).Value = id;
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                command.ExecuteNonQuery();
             }
         }
 
@@ -241,9 +241,9 @@ namespace Rebus.MySql.DataBus
                             WHERE id = @id 
                             LIMIT 1";
                         command.Parameters.Add("id", MySqlDbType.VarChar, 200).Value = id;
-                        using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
+                        using (var reader = command.ExecuteReader())
                         {
-                            if (!await reader.ReadAsync().ConfigureAwait(false))
+                            if (!reader.Read())
                             {
                                 throw new ArgumentException($"Row with ID {id} not found");
                             }
@@ -284,7 +284,7 @@ namespace Rebus.MySql.DataBus
                     {
                         command.CommandText = $"DELETE FROM {_tableName.QualifiedName} WHERE id = @id";
                         command.Parameters.Add("id", MySqlDbType.VarChar, 200).Value = id;
-                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        command.ExecuteNonQuery();
                     }
                     await connection.CompleteAsync().ConfigureAwait(false);
                 }
