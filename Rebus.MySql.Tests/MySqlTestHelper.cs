@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using MySqlConnector;
 using Rebus.Exceptions;
-using Rebus.MySql;
 using Rebus.MySql.Tests.Extensions;
 using Rebus.Tests.Contracts;
 
